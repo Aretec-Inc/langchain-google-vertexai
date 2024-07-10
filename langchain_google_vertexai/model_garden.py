@@ -225,6 +225,7 @@ class ChatAnthropicVertex(_VertexAICommon, BaseChatModel):
             llm_output=llm_output,
         )
 
+
     def _generate(
         self,
         messages: List[BaseMessage],
@@ -238,6 +239,14 @@ class ChatAnthropicVertex(_VertexAICommon, BaseChatModel):
                 messages, stop=stop, run_manager=run_manager, **kwargs
             )
             return generate_from_stream(stream_iter)
+        
+        # Fixed Anthropic Issue
+        params_messages = params.get('messages')
+        params_system = params.get('system')
+        params_messages.append({"role": "user", "content":params_system})
+        if(params.get('system')):
+            del params['system']
+        params['messages'] = params_messages
         data = self.client.messages.create(**params)
         return self._format_output(data, **kwargs)
 
