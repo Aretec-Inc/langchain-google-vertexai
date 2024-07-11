@@ -234,19 +234,21 @@ class ChatAnthropicVertex(_VertexAICommon, BaseChatModel):
         **kwargs: Any,
     ) -> ChatResult:
         params = self._format_params(messages=messages, stop=stop, **kwargs)
+        # Fixed Anthropic Issue
+        params_messages = params.get('messages',[])
+        if not len(params_messages):
+            params_system = params.get('system')
+            params_messages.append({"role": "user", "content":params_system})
+            if(params.get('system')):
+                del params['system']
+            params['messages'] = params_messages
         if self.streaming:
             stream_iter = self._stream(
                 messages, stop=stop, run_manager=run_manager, **kwargs
             )
             return generate_from_stream(stream_iter)
         
-        # Fixed Anthropic Issue
-        params_messages = params.get('messages')
-        params_system = params.get('system')
-        params_messages.append({"role": "user", "content":params_system})
-        if(params.get('system')):
-            del params['system']
-        params['messages'] = params_messages
+
         data = self.client.messages.create(**params)
         return self._format_output(data, **kwargs)
 
