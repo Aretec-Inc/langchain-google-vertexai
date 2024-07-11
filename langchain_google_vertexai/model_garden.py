@@ -284,7 +284,15 @@ class ChatAnthropicVertex(_VertexAICommon, BaseChatModel):
     ) -> Iterator[ChatGenerationChunk]:
         if stream_usage is None:
             stream_usage = self.stream_usage
+        
         params = self._format_params(messages=messages, stop=stop, **kwargs)
+        params_messages = params.get('messages',[])
+        if not len(params_messages):
+            params_system = params.get('system')
+            params_messages.append({"role": "user", "content":params_system})
+            if(params.get('system')):
+                del params['system']
+            params['messages'] = params_messages
         stream = self.client.messages.create(**params, stream=True)
         coerce_content_to_string = not _tools_in_params(params)
         for event in stream:
